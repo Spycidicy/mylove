@@ -101,8 +101,8 @@
         <!-- Photo Album Modal -->
         <transition name="fade">
           <div v-if="showAlbum" class="album-modal" @click.self="closeAlbum">
-            <button class="close-album-btn" @click="closeAlbum">&times;</button>
             <div class="album-content">
+              <button class="close-album-btn" @click="closeAlbum">&times;</button>
               <h2>Our Love</h2>
               <div v-if="isLoadingPhotos" class="loading-photos">Loading photos...</div>
               <div v-else class="photo-grid">
@@ -776,24 +776,27 @@ p {
 
 .close-album-btn {
   position: absolute;
-  top: 5px;
-  right: 5px;
+  top: 10px;
+  right: 10px;
   font-size: 2rem;
   font-weight: bold;
   color: #555;
-  background-color: rgba(255, 255, 255, 0.7);
+  background-color: rgba(240, 240, 240, 0.8);
   border: none;
   border-radius: 50%;
   cursor: pointer;
   width: 40px;
   height: 40px;
-  line-height: 40px;
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  line-height: 1;
+  padding: 0;
   transition: background-color 0.2s, color 0.2s;
 }
 
 .close-album-btn:hover {
-  background-color: rgba(230, 230, 230, 0.9);
+  background-color: rgba(220, 220, 220, 0.9);
   color: #000;
 }
 
