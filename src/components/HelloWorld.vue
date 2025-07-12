@@ -48,6 +48,15 @@
         <!-- Canvas for the fireworks animation is now a sibling to the main content -->
         <canvas id="fireworks-canvas"></canvas>
         
+        <!-- Weather Display - Moved outside of main-content to be positioned correctly -->
+        <div v-if="weather.temp" class="weather-container">
+          <img :src="weather.iconUrl" alt="Weather icon">
+          <div class="weather-details">
+            <p>{{ weather.temp }}&deg;F in Chicago</p>
+            <p class="weather-description">{{ weather.description }}</p>
+          </div>
+        </div>
+
         <div class="main-content">
           <img alt="Vue logo" src="https://cdn-icons-gif.flaticon.com/15600/15600693.gif" style="width: 150px; height: auto;">
           <h1>Happy Anniversary, Lauren my love</h1>
@@ -76,6 +85,16 @@
               Ethan Long
             </p>
           </div>
+
+          <!-- Quote of the Day Section -->
+          <div v-if="quote.text" class="quote-container">
+            <p class="quote-text">"{{ quote.text }}"</p>
+            <p class="quote-author">- {{ quote.author }}</p>
+          </div>
+          <div v-if="isLoadingQuote" class="loading-quote">
+            <p>Fetching a special quote for you...</p>
+          </div>
+
         </div>
         
         <!-- Photo Album Modal -->
@@ -128,14 +147,22 @@ export default {
       photos: [],
       showAlbum: false,
       isLoadingPhotos: false,
+      // Properties for the quote
+      quote: { text: '', author: '' },
+      isLoadingQuote: false,
+      // Properties for the weather
+      weather: { temp: null, description: '', iconUrl: '' },
+      isLoadingWeather: false,
     };
   },
   created() {
-    // Caching logic is now commented out
-    // if (localStorage.getItem('hasVisited') === 'true') {
-    //   this.showMainContent = true;
-    // }
+    // Caching logic is now re-enabled
+    if (localStorage.getItem('hasVisited') === 'true') {
+      this.showMainContent = true;
+    }
     this.fetchLoveMessage();
+    this.fetchQuote(); 
+    this.fetchWeather(); // Fetch weather when the component is created
   },
   mounted() {
     // Start the intro animation sequence if the main content isn't already showing
@@ -186,8 +213,8 @@ export default {
       setTimeout(() => { this.showLandingContent = true; }, 9500);
     },
     showMainPage() {
-      // Caching logic is now commented out
-      // localStorage.setItem('hasVisited', 'true');
+      // Caching logic is now re-enabled
+      localStorage.setItem('hasVisited', 'true');
       this.showMainContent = true;
     },
     toggleDropdown() {
@@ -213,11 +240,49 @@ export default {
         this.loveMessage = "Couldn't fetch a special message, but my love for you is always here!";
       }
     },
+    async fetchWeather() {
+      this.isLoadingWeather = true;
+      try {
+        // The placeholder has been replaced with your actual API Gateway URL
+        const response = await fetch('https://0iumgzsw35.execute-api.us-east-2.amazonaws.com/lovestage/weather');
+        if (!response.ok) {
+          throw new Error('Network response was not ok for weather');
+        }
+        const data = await response.json();
+        this.weather.temp = Math.round(data.temp);
+        this.weather.description = data.description;
+        this.weather.iconUrl = `https://openweathermap.org/img/wn/${data.icon}@2x.png`;
+      } catch (error) {
+        console.error('Error fetching weather:', error);
+      } finally {
+        this.isLoadingWeather = false;
+      }
+    },
+    async fetchQuote() {
+      this.isLoadingQuote = true;
+      const apiUrl = 'https://dummyjson.com/quotes/random';
+      
+      try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error('Network response was not ok for quote');
+        }
+        const data = await response.json();
+        
+        this.quote.text = data.quote;
+        this.quote.author = data.author;
+
+      } catch (error) {
+        console.error('Error fetching quote:', error);
+        this.quote.text = 'My love for you is a quote that never ends.';
+        this.quote.author = 'Me';
+      } finally {
+        this.isLoadingQuote = false;
+      }
+    },
     async fetchPhotos() {
       this.isLoadingPhotos = true;
       try {
-        // This URL points to the 'photos.json' file in your S3 bucket.
-        // Make sure this file exists and is publicly accessible.
         const response = await fetch('https://mylovetolauren.s3.us-east-2.amazonaws.com/photos.json');
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -225,13 +290,11 @@ export default {
         this.photos = await response.json();
       } catch (error) {
         console.error('Error fetching photos:', error);
-        // Handle the error, e.g., show a message to the user
       } finally {
         this.isLoadingPhotos = false;
       }
     },
     async openAlbum() {
-      // Fetch photos only if we haven't already
       if (this.photos.length === 0) {
         await this.fetchPhotos();
       }
@@ -278,7 +341,6 @@ export default {
     },
     handleTouchEnd(event) {
       const touchEndY = event.changedTouches[0].clientY;
-      // Updated to detect an upward swipe
       if (touchEndY < this.touchStartY - 50) { 
         this.showMainPage();
       }
@@ -286,7 +348,6 @@ export default {
 
     // --- FIREWORKS ANIMATION LOGIC ---
     
-    // This function will be bound to the resize event
     resizeCanvas() {
         const canvas = document.getElementById('fireworks-canvas');
         if(canvas) {
@@ -296,130 +357,90 @@ export default {
     },
 
     initFireworks() {
-      // Reset the launch count in case this gets re-initialized
       this.fireworksLaunched = 0;
-
       const canvas = document.getElementById('fireworks-canvas');
       if (!canvas) return;
       
       const ctx = canvas.getContext('2d');
-      this.resizeCanvas(); // Initial size set
-      
-      // We need a reference to the bound function to remove it later
+      this.resizeCanvas(); 
       this.boundResizeCanvas = this.resizeCanvas.bind(this);
       window.addEventListener('resize', this.boundResizeCanvas);
 
       let fireworks = [];
       let particles = [];
-
-      // Helper to get a random number in a range
       const random = (min, max) => Math.random() * (max - min) + min;
 
-      // Creates a single particle for the explosion effect
       function Particle(x, y, color) {
-        this.x = x;
-        this.y = y;
-        this.color = color;
+        this.x = x; this.y = y; this.color = color;
         this.velocity = { x: random(-2.5, 2.5), y: random(-7, -1.5) };
-        this.gravity = 0.07;
-        this.friction = 0.98;
-        this.alpha = 1;
+        this.gravity = 0.07; this.friction = 0.98; this.alpha = 1;
         this.decay = random(0.015, 0.03);
       }
 
       Particle.prototype.update = function() {
-        this.velocity.x *= this.friction;
-        this.velocity.y += this.gravity;
-        this.x += this.velocity.x;
-        this.y += this.velocity.y;
+        this.velocity.x *= this.friction; this.velocity.y += this.gravity;
+        this.x += this.velocity.x; this.y += this.velocity.y;
         this.alpha -= this.decay;
       };
 
       Particle.prototype.draw = function() {
-        ctx.save();
-        ctx.globalAlpha = this.alpha;
-        ctx.beginPath();
+        ctx.save(); ctx.globalAlpha = this.alpha; ctx.beginPath();
         ctx.arc(this.x, this.y, 2, 0, Math.PI * 2, false);
-        ctx.fillStyle = this.color;
-        ctx.fill();
-        ctx.restore();
+        ctx.fillStyle = this.color; ctx.fill(); ctx.restore();
       };
 
-      // Creates a firework rocket
       function Firework(x, y, targetX, targetY) {
-        this.x = x;
-        this.y = y;
-        this.targetX = targetX;
-        this.targetY = targetY;
-        this.speed = 2;
-        this.angle = Math.atan2(targetY - y, targetX - x);
+        this.x = x; this.y = y; this.targetX = targetX; this.targetY = targetY;
+        this.speed = 2; this.angle = Math.atan2(targetY - y, targetX - x);
         this.velocity = { x: Math.cos(this.angle) * this.speed, y: Math.sin(this.angle) * this.speed };
         this.color = `hsl(${random(0, 360)}, 100%, 50%)`;
       }
 
       Firework.prototype.update = function() {
-        // Reduced the multiplier from 3 to 2 to make the rocket slower
-        this.x += this.velocity.x * 2;
-        this.y += this.velocity.y * 2;
+        this.x += this.velocity.x * 2; this.y += this.velocity.y * 2;
       };
 
       Firework.prototype.draw = function() {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, 3, 0, Math.PI * 2, false);
-        ctx.fillStyle = this.color;
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI * 2, false);
+        ctx.fillStyle = this.color; ctx.fill();
       };
       
-      // The main animation loop that drives everything
       const animate = () => {
         this.animationFrameId = requestAnimationFrame(animate);
-        
-        // Create a trailing effect by filling the canvas with a semi-transparent color
         ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Launch a new firework periodically, up to the max count
         if (this.fireworksLaunched < this.maxFireworks && random(0, 100) < 5) {
-            const startX = canvas.width / 2;
-            const startY = canvas.height;
-            const targetX = random(0, canvas.width);
-            const targetY = random(0, canvas.height / 2);
+            const startX = canvas.width / 2; const startY = canvas.height;
+            const targetX = random(0, canvas.width); const targetY = random(0, canvas.height / 2);
             fireworks.push(new Firework(startX, startY, targetX, targetY));
-            this.fireworksLaunched++; // Increment the counter
+            this.fireworksLaunched++;
         }
         
-        // Update and draw fireworks, and check for explosion
         fireworks.forEach((firework, index) => {
-            firework.update();
-            firework.draw();
-            
+            firework.update(); firework.draw();
             const distance = Math.hypot(firework.targetX - firework.x, firework.targetY - firework.y);
             if(distance < 5) {
-                // Explode into particles
                 const particleCount = 100;
                 for (let i = 0; i < particleCount; i++) {
                     particles.push(new Particle(firework.x, firework.y, firework.color));
                 }
-                fireworks.splice(index, 1); // Remove the firework
+                fireworks.splice(index, 1);
             }
         });
         
-        // Update and draw particles, and remove faded ones
         particles.forEach((particle, index) => {
             if (particle.alpha <= 0) {
                 particles.splice(index, 1);
             } else {
-                particle.update();
-                particle.draw();
+                particle.update(); particle.draw();
             }
         });
 
-        // Stop the animation once all launched fireworks and their particles are gone
         if (this.fireworksLaunched >= this.maxFireworks && fireworks.length === 0 && particles.length === 0) {
             cancelAnimationFrame(this.animationFrameId);
         }
       };
-
       animate();
     }
   }
@@ -437,6 +458,36 @@ export default {
   z-index: 0; /* Place it behind the main content */
   background-color: #ffffff; /* White background */
 }
+
+/* --- WEATHER STYLES --- */
+.weather-container {
+  position: fixed; /* Changed to fixed to be relative to the viewport */
+  top: 20px;
+  right: 20px;
+  z-index: 10; /* Ensure it's above the canvas but below the modal */
+  display: flex;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.7);
+  padding: 5px 10px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  color: #333;
+}
+.weather-container img {
+  width: 50px;
+  height: 50px;
+}
+.weather-details p {
+  margin: 0;
+  font-size: 0.9rem;
+  text-align: left;
+}
+.weather-description {
+  text-transform: capitalize;
+  font-size: 0.8rem !important;
+  color: #666;
+}
+
 
 /* --- CHAT ANIMATION STYLES --- */
 .chat-container {
@@ -593,6 +644,8 @@ h1 {
 
 .button-container {
   display: flex;
+  flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+  justify-content: center;
   gap: 15px;
   margin-top: 20px;
 }
@@ -649,6 +702,35 @@ p {
   line-height: 1.5;
   color: #333; /* Ensure text inside is dark */
   text-shadow: none; /* Remove shadow inherited from parent p */
+}
+
+/* --- QUOTE STYLES --- */
+.quote-container {
+  margin-top: 40px;
+  padding: 20px;
+  border-top: 1px solid #eee;
+  width: 100%;
+  max-width: 600px;
+  text-align: center;
+}
+
+.quote-text {
+  font-size: 1.2rem;
+  font-style: italic;
+  color: #555;
+  margin-bottom: 10px;
+}
+
+.quote-author {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #888;
+}
+
+.loading-quote p {
+    margin-top: 40px;
+    font-style: italic;
+    color: #888;
 }
 
 /* --- ALBUM STYLES --- */
