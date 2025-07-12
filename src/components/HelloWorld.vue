@@ -79,8 +79,9 @@
           <div v-show="isDropdownOpen" class="dropdown-content" ref="letterContent">
             <p>
               My Dearest Lauren, <br><br>
-              This past year with you has truly been the best year of my life. Every moment has been filled with more love, joy, and happiness than I could have ever imagined. From the very first day we met, I knew my life was about to change in the most beautiful way. <br><br>
-              Thank you for being the most amazing person in my life. I'm beyond grateful for your love and support, and I can't wait to spend many more wonderful years together. This website will be online forever as a testament to our love, and I'll be making regular updates to celebrate our journey. <br><br>
+              This past year with you has truly been the best year of my life. Every moment has been filled with more love, joy, and happiness than I could have ever imagined. From the very first day I saw you, I knew my life was about to change in the most beautiful way. <br><br>
+              Thank you for being the most amazing person in my life. I'm beyond grateful for your love, support and kisses, and I can't wait to spend many more wonderful years together. This website will be online forever as a testament to our love, and I'll be making updates to celebrate our journey. <br><br>
+              I Love you so much bae, never change. <br><br>
               Forever yours, <br><br>
               Ethan Long
             </p>
@@ -194,6 +195,17 @@ export default {
     window.removeEventListener('resize', this.resizeCanvas);
   },
   methods: {
+    // --- HAPTIC FEEDBACK ---
+    triggerHapticFeedback() {
+      // Check if the Vibration API is supported by the browser.
+      // Note: iPhones have strict rules. Vibration may not work if the phone
+      // is in silent mode or if the user has disabled it in settings.
+      // This code provides the best chance for it to work.
+      if ('vibrate' in navigator) {
+        // A short, crisp vibration for feedback
+        navigator.vibrate(50);
+      }
+    },
     startIntroAnimation() {
       setTimeout(() => { this.showMyTypingIndicator = true; }, 1000);
       setTimeout(() => { 
@@ -213,7 +225,7 @@ export default {
       setTimeout(() => { this.showLandingContent = true; }, 9500);
     },
     showMainPage() {
-      // Caching logic is now re-enabled
+      this.triggerHapticFeedback();
       localStorage.setItem('hasVisited', 'true');
       this.showMainContent = true;
     },
@@ -243,7 +255,6 @@ export default {
     async fetchWeather() {
       this.isLoadingWeather = true;
       try {
-        // The placeholder has been replaced with your actual API Gateway URL
         const response = await fetch('https://0iumgzsw35.execute-api.us-east-2.amazonaws.com/lovestage/weather');
         if (!response.ok) {
           throw new Error('Network response was not ok for weather');
@@ -295,15 +306,18 @@ export default {
       }
     },
     async openAlbum() {
+      this.triggerHapticFeedback();
       if (this.photos.length === 0) {
         await this.fetchPhotos();
       }
       this.showAlbum = true;
     },
     closeAlbum() {
+      this.triggerHapticFeedback();
       this.showAlbum = false;
     },
     toggleText() {
+      this.triggerHapticFeedback();
       this.isFading = true;
 
       setTimeout(() => {
@@ -320,6 +334,7 @@ export default {
       }, 1000);
     },
     toggleScroll() {
+      this.triggerHapticFeedback();
       this.isDropdownOpen = !this.isDropdownOpen; 
 
       this.$nextTick(() => {
@@ -342,6 +357,7 @@ export default {
     handleTouchEnd(event) {
       const touchEndY = event.changedTouches[0].clientY;
       if (touchEndY < this.touchStartY - 50) { 
+        this.triggerHapticFeedback();
         this.showMainPage();
       }
     },
@@ -760,13 +776,25 @@ p {
 
 .close-album-btn {
   position: absolute;
-  top: 10px;
-  right: 20px;
-  font-size: 2.5rem;
-  color: #333;
-  background: none;
+  top: 5px;
+  right: 5px;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #555;
+  background-color: rgba(255, 255, 255, 0.7);
   border: none;
+  border-radius: 50%;
   cursor: pointer;
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  text-align: center;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.close-album-btn:hover {
+  background-color: rgba(230, 230, 230, 0.9);
+  color: #000;
 }
 
 .album-content h2 {
