@@ -1,6 +1,8 @@
 <template>
-  <img alt="Vue logo" src="https://cdn-icons-gif.flaticon.com/15600/15600693.gif" style="width: 150px; height: auto;">
-  <HelloWorld msg="Lauren St.Clair"/>
+  <div id="app">
+    <!-- Main Component for Displaying Content -->
+    <HelloWorld />
+  </div>
 </template>
 
 <script>
@@ -15,6 +17,7 @@ export default {
 </script>
 
 <style>
+/* Optional Global Styles */
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
