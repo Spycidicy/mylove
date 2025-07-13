@@ -48,7 +48,7 @@
         <!-- Canvas for the fireworks animation is now a sibling to the main content -->
         <canvas id="fireworks-canvas"></canvas>
         
-        <!-- Weather Display -->
+        <!-- Weather Display - Moved outside of main-content to be positioned correctly -->
         <div v-if="weather.temp" class="weather-container">
           <img :src="weather.iconUrl" alt="Weather icon">
           <div class="weather-details">
@@ -56,11 +56,6 @@
             <p class="weather-description">{{ weather.description }}</p>
           </div>
         </div>
-        
-        <!-- Notification Button in the top-left corner -->
-        <button @click="subscribeToNotifications" :disabled="isSubscribed" class="notification-btn">
-          {{ isSubscribed ? 'Notifications On' : 'Enable Notifications' }}
-        </button>
 
         <div class="main-content">
           <img alt="Vue logo" src="https://cdn-icons-gif.flaticon.com/15600/15600693.gif" style="width: 150px; height: auto;">
@@ -78,6 +73,10 @@
             </button>
             <button @click="openAlbum">
               <h3>Our Photo Album</h3>
+            </button>
+            <!-- New Button for Notifications -->
+            <button @click="subscribeToNotifications" :disabled="isSubscribed">
+              <h3>{{ isSubscribed ? 'Notifications On' : 'Enable Notifications' }}</h3>
             </button>
           </div>
 
@@ -129,7 +128,7 @@
 export default {
   data() {
     return {
-      greetingMessage: '',
+      greetingMessage: 'Loading...',
       loveMessage: 'Loading...',
       translatedMessage: '',
       language: '',
@@ -161,7 +160,7 @@ export default {
     if (localStorage.getItem('hasVisited') === 'true') {
       this.showMainContent = true;
     }
-    this.fetchGreeting();
+    this.fetchGreeting(); // Fetch the dynamic greeting
     this.fetchLoveMessage();
     this.fetchQuote(); 
     this.fetchWeather();
@@ -516,27 +515,6 @@ export default {
   text-transform: capitalize;
   font-size: 0.8rem !important;
   color: #666;
-}
-
-/* --- NOTIFICATION BUTTON STYLES --- */
-.notification-btn {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  z-index: 10;
-  background: #8e24aa;
-  color: white;
-  padding: 8px 15px;
-  border: none;
-  cursor: pointer;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  transition: all 0.2s;
-  font-size: 0.9rem;
-}
-.notification-btn:disabled {
-  background-color: #5a9c47;
-  cursor: default;
 }
 
 
