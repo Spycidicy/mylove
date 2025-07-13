@@ -59,7 +59,7 @@
 
         <div class="main-content">
           <img alt="Vue logo" src="https://cdn-icons-gif.flaticon.com/15600/15600693.gif" style="width: 150px; height: auto;">
-          <h1>Happy Anniversary, Lauren my love</h1>
+          <h1>{{ greetingMessage }}</h1>
 
           <p @click="toggleText" :class="{'fade': isFading}">
             {{ loveMessage }}
@@ -80,7 +80,7 @@
             <p>
               My Dearest Lauren, <br><br>
               This past year with you has truly been the best year of my life. Every moment has been filled with more love, joy, and happiness than I could have ever imagined. From the very first day I saw you, I knew my life was about to change in the most beautiful way. <br><br>
-              Thank you for being the most amazing person in my life. I'm beyond grateful for your love, support and kisses, and I can't wait to spend many more wonderful years together. This website will be online forever as a testament to our love, and I'll be making updates to celebrate our journey. <br><br>
+              Thank you for being the most amazing person in my life. I'm beyond grateful for your love, support and kisses, and I can't wait to spend many more wonderful years together. This website will be online forever as a testament to our love, and I'll be making regular updates to celebrate our journey. <br><br>
               I Love you so much bae, never change. <br><br>
               Forever yours, <br><br>
               Ethan Long
@@ -93,7 +93,7 @@
             <p class="quote-author">- {{ quote.author }}</p>
           </div>
           <div v-if="isLoadingQuote" class="loading-quote">
-            <p>Fetching a special quote for you...</p>
+            <p>Generating a special message for you...</p>
           </div>
 
         </div>
@@ -124,6 +124,7 @@
 export default {
   data() {
     return {
+      greetingMessage: '', // New property for the dynamic greeting
       loveMessage: 'Loading...',
       translatedMessage: '',
       language: '',
@@ -161,6 +162,7 @@ export default {
     if (localStorage.getItem('hasVisited') === 'true') {
       this.showMainContent = true;
     }
+    this.setGreetingMessage(); // Set the greeting message
     this.fetchLoveMessage();
     this.fetchQuote(); 
     this.fetchWeather(); // Fetch weather when the component is created
@@ -199,6 +201,40 @@ export default {
     triggerHapticFeedback() {
       if ('vibrate' in navigator) {
         navigator.vibrate(50);
+      }
+    },
+    setGreetingMessage() {
+      const today = new Date();
+      // Using UTC methods to avoid timezone issues
+      const month = today.getUTCMonth() + 1; // getUTCMonth() is 0-indexed
+      const day = today.getUTCDate();
+      const year = today.getUTCFullYear();
+
+      const getThanksgiving = (year) => {
+        const novemberFirst = new Date(Date.UTC(year, 10, 1));
+        const dayOfWeek = novemberFirst.getUTCDay();
+        const firstThursday = 1 + (4 - dayOfWeek + 7) % 7;
+        return firstThursday + 21;
+      };
+
+      if (month === 7 && day === 14) {
+        this.greetingMessage = "Happy Anniversary, my love!";
+      } else if (month === 7 && day === 6) {
+        this.greetingMessage = "Happy Birthday, my love!";
+      } else if (month === 1 && day === 1) {
+        this.greetingMessage = "Happy New Year, Lauren!";
+      } else if (month === 7 && day === 4) {
+        this.greetingMessage = "Happy Fourth of July!";
+      } else if (month === 11 && day === getThanksgiving(year)) {
+        this.greetingMessage = "Happy Thanksgiving, my love!";
+      } else if (month === 12 && day === 25) {
+        this.greetingMessage = "Merry Christmas, Lauren!";
+      } else {
+        const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
+        const nicknames = ["bae", "babe", "baby", "love", "Lauren", "cutie", "wife bae", "cutie bae"];
+        const randomIndex = Math.floor(Math.random() * nicknames.length);
+        const randomNickname = nicknames[randomIndex];
+        this.greetingMessage = `Have a great ${dayOfWeek}, ${randomNickname}!`;
       }
     },
     startIntroAnimation() {
@@ -267,7 +303,7 @@ export default {
     async fetchQuote() {
       this.isLoadingQuote = true;
       const today = new Date().toISOString().split('T')[0];
-      const storedQuoteData = JSON.parse(localStorage.getItem('dailyQuote'));
+      const storedQuoteData = JSON.parse(localStorage.getItem('dailyAiQuote'));
 
       if (storedQuoteData && storedQuoteData.date === today) {
         this.quote = storedQuoteData.quote;
@@ -275,28 +311,27 @@ export default {
         return;
       }
 
-      // Switched to a more reliable, CORS-friendly API
-      const apiUrl = 'https://dummyjson.com/quotes/random';
+      const apiUrl = 'https://0iumgzsw35.execute-api.us-east-2.amazonaws.com/lovestage/motivationalQuote';
       
       try {
         const response = await fetch(apiUrl);
         if (!response.ok) {
-          throw new Error('Network response was not ok for quote');
+          throw new Error('Network response was not ok for AI quote');
         }
         const data = await response.json();
         
         const newQuote = {
           text: data.quote,
-          author: data.author || 'Unknown'
+          author: data.author
         };
         
         this.quote = newQuote;
-        localStorage.setItem('dailyQuote', JSON.stringify({ date: today, quote: newQuote }));
+        localStorage.setItem('dailyAiQuote', JSON.stringify({ date: today, quote: newQuote }));
 
       } catch (error) {
-        console.error('Error fetching quote:', error);
-        this.quote.text = 'My love for you is a quote that never ends.';
-        this.quote.author = 'Me';
+        console.error('Error fetching AI quote:', error);
+        this.quote.text = 'My love for you is a message that never ends.';
+        this.quote.author = 'Love, Ethan';
       } finally {
         this.isLoadingQuote = false;
       }
