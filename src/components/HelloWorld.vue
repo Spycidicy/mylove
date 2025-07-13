@@ -197,12 +197,7 @@ export default {
   methods: {
     // --- HAPTIC FEEDBACK ---
     triggerHapticFeedback() {
-      // Check if the Vibration API is supported by the browser.
-      // Note: iPhones have strict rules. Vibration may not work if the phone
-      // is in silent mode or if the user has disabled it in settings.
-      // This code provides the best chance for it to work.
       if ('vibrate' in navigator) {
-        // A short, crisp vibration for feedback
         navigator.vibrate(50);
       }
     },
@@ -271,6 +266,16 @@ export default {
     },
     async fetchQuote() {
       this.isLoadingQuote = true;
+      const today = new Date().toISOString().split('T')[0];
+      const storedQuoteData = JSON.parse(localStorage.getItem('dailyQuote'));
+
+      if (storedQuoteData && storedQuoteData.date === today) {
+        this.quote = storedQuoteData.quote;
+        this.isLoadingQuote = false;
+        return;
+      }
+
+      // Switched to a more reliable, CORS-friendly API
       const apiUrl = 'https://dummyjson.com/quotes/random';
       
       try {
@@ -280,8 +285,13 @@ export default {
         }
         const data = await response.json();
         
-        this.quote.text = data.quote;
-        this.quote.author = data.author;
+        const newQuote = {
+          text: data.quote,
+          author: data.author || 'Unknown'
+        };
+        
+        this.quote = newQuote;
+        localStorage.setItem('dailyQuote', JSON.stringify({ date: today, quote: newQuote }));
 
       } catch (error) {
         console.error('Error fetching quote:', error);
