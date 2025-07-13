@@ -128,7 +128,7 @@
 export default {
   data() {
     return {
-      greetingMessage: 'Loading...',
+      greetingMessage: '',
       loveMessage: 'Loading...',
       translatedMessage: '',
       language: '',
@@ -153,14 +153,14 @@ export default {
       isLoadingQuote: false,
       weather: { temp: null, description: '', iconUrl: '' },
       isLoadingWeather: false,
-      isSubscribed: false,
+      isSubscribed: false, // For push notifications
     };
   },
   created() {
     if (localStorage.getItem('hasVisited') === 'true') {
       this.showMainContent = true;
     }
-    this.fetchGreeting(); // Fetch the dynamic greeting
+    this.setGreetingMessage();
     this.fetchLoveMessage();
     this.fetchQuote(); 
     this.fetchWeather();
@@ -188,15 +188,37 @@ export default {
     triggerHapticFeedback() {
       if ('vibrate' in navigator) navigator.vibrate(50);
     },
-    async fetchGreeting() {
-      try {
-        const response = await fetch('https://0iumgzsw35.execute-api.us-east-2.amazonaws.com/lovestage/get-daily-greeting');
-        if (!response.ok) throw new Error('Failed to fetch greeting');
-        const data = await response.json();
-        this.greetingMessage = data.greeting;
-      } catch (error) {
-        console.error("Error fetching greeting:", error);
-        this.greetingMessage = "Hello, my love!"; // Fallback message
+    setGreetingMessage() {
+      const today = new Date();
+      const month = today.getUTCMonth() + 1;
+      const day = today.getUTCDate();
+      const year = today.getUTCFullYear();
+
+      const getThanksgiving = (year) => {
+        const novemberFirst = new Date(Date.UTC(year, 10, 1));
+        const dayOfWeek = novemberFirst.getUTCDay();
+        const firstThursday = 1 + (4 - dayOfWeek + 7) % 7;
+        return firstThursday + 21;
+      };
+
+      if (month === 7 && day === 14) {
+        this.greetingMessage = "Happy Anniversary, my love!";
+      } else if (month === 7 && day === 6) {
+        this.greetingMessage = "Happy Birthday, my love!";
+      } else if (month === 1 && day === 1) {
+        this.greetingMessage = "Happy New Year, Lauren!";
+      } else if (month === 7 && day === 4) {
+        this.greetingMessage = "Happy Fourth of July!";
+      } else if (month === 11 && day === getThanksgiving(year)) {
+        this.greetingMessage = "Happy Thanksgiving, my love!";
+      } else if (month === 12 && day === 25) {
+        this.greetingMessage = "Merry Christmas, Lauren!";
+      } else {
+        const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
+        const nicknames = ["bae", "babe", "baby", "love", "Lauren", "cutie", "wife bae", "cutie bae"];
+        const dailyIndex = day % nicknames.length;
+        const dailyNickname = nicknames[dailyIndex];
+        this.greetingMessage = `Have a great ${dayOfWeek}, ${dailyNickname}!`;
       }
     },
     startIntroAnimation() {
@@ -229,8 +251,16 @@ export default {
       try {
         const response = await fetch('https://0iumgzsw35.execute-api.us-east-2.amazonaws.com/lovestage/love-message');
         const data = await response.json();
-        this.translatedMessage = data.body ? JSON.parse(data.body).message : data.message;
-        this.language = data.body ? JSON.parse(data.body).language : data.language;
+        
+        if (data.body) {
+          const parsedBody = JSON.parse(data.body);
+          this.translatedMessage = parsedBody.message;
+          this.language = parsedBody.language;
+        } else {
+          this.translatedMessage = data.message;
+          this.language = data.language;
+        }
+
         this.loveMessage = this.translatedMessage;
       } catch (error) {
         console.error('Error fetching love message:', error);
@@ -269,9 +299,11 @@ export default {
         const response = await fetch(apiUrl);
         if (!response.ok) throw new Error('Network response was not ok for AI quote');
         const data = await response.json();
+        
         const newQuote = { text: data.quote, author: data.author };
         this.quote = newQuote;
         localStorage.setItem('dailyAiQuote', JSON.stringify({ date: today, quote: newQuote }));
+
       } catch (error) {
         console.error('Error fetching AI quote:', error);
         this.quote.text = 'My love for you is a message that never ends.';
@@ -304,6 +336,7 @@ export default {
     toggleText() {
       this.triggerHapticFeedback();
       this.isFading = true;
+
       setTimeout(() => {
         this.loveMessage = `"I love you" in ${this.language}`;
         this.isFading = false;
@@ -337,6 +370,8 @@ export default {
         this.showMainPage();
       }
     },
+    
+    // --- PUSH NOTIFICATION METHODS ---
     async checkSubscriptionStatus() {
       if ('serviceWorker' in navigator) {
         const registration = await navigator.serviceWorker.ready;
@@ -360,9 +395,11 @@ export default {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
+        // The placeholder has been replaced with your actual VAPID Public Key
         applicationServerKey: 'BLewptXn8CZX-6Queb6PHavTAWn3cygDQaQ9kfA3-K9MHW37EnftMIgraTKev5NTp_StvBnjgr1ikxFL2fZTQ6Y'
       });
       
+      // The placeholder has been replaced with your actual API Gateway URL
       const saveSubscriptionUrl = 'https://62n8jh9wn6.execute-api.us-east-2.amazonaws.com/default/save-love-app-subscription';
       
       try {
@@ -378,6 +415,8 @@ export default {
         alert('Something went wrong, please try again.');
       }
     },
+
+    // --- FIREWORKS ANIMATION LOGIC ---
     resizeCanvas() {
         const canvas = document.getElementById('fireworks-canvas');
         if(canvas) {
