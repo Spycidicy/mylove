@@ -58,9 +58,8 @@
         </div>
         
         <!-- Notification Button in the top-left corner -->
-        <button @click="subscribeToNotifications" :disabled="isSubscribed" class="notification-btn" :title="isSubscribed ? 'Notifications are on' : 'Enable notifications'">
-          <svg v-if="!isSubscribed" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-          <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="m2 2 20 20"/></svg>
+        <button @click="subscribeToNotifications" :disabled="isSubscribed" class="notification-btn">
+          {{ isSubscribed ? 'Notifications On' : 'Enable Notifications' }}
         </button>
 
         <div class="main-content">
@@ -525,27 +524,19 @@ export default {
   top: 20px;
   left: 20px;
   z-index: 10;
-  background: #fff;
-  color: #555;
-  padding: 0;
-  border: 1px solid #ccc;
+  background: #8e24aa;
+  color: white;
+  padding: 8px 15px;
+  border: none;
   cursor: pointer;
-  border-radius: 50%;
+  border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   transition: all 0.2s;
-  width: 44px;
-  height: 44px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  font-size: 0.9rem;
 }
 .notification-btn:disabled {
-  background-color: #e9e9eb;
-  color: #5a9c47;
+  background-color: #5a9c47;
   cursor: default;
-}
-.notification-btn:hover:not(:disabled) {
-    background-color: #f0f0f0;
 }
 
 
