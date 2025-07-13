@@ -1,5 +1,6 @@
-// A name for the cache storage
-const CACHE_NAME = 'my-love-lauren-cache-v1';
+// A name for the cache storage. Incrementing this version number will
+// force the browser to install the new service worker.
+const CACHE_NAME = 'my-love-lauren-cache-v2';
 
 // List of files to cache when the service worker is installed.
 const urlsToCache = [
@@ -44,6 +45,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
+            // If a cache is not in our whitelist, delete it.
             return caches.delete(cacheName);
           }
         })
