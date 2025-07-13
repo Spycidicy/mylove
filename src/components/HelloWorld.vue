@@ -48,7 +48,7 @@
         <!-- Canvas for the fireworks animation is now a sibling to the main content -->
         <canvas id="fireworks-canvas"></canvas>
         
-        <!-- Weather Display - Moved outside of main-content to be positioned correctly -->
+        <!-- Weather Display -->
         <div v-if="weather.temp" class="weather-container">
           <img :src="weather.iconUrl" alt="Weather icon">
           <div class="weather-details">
@@ -56,6 +56,12 @@
             <p class="weather-description">{{ weather.description }}</p>
           </div>
         </div>
+        
+        <!-- Notification Button in the top-left corner -->
+        <button @click="subscribeToNotifications" :disabled="isSubscribed" class="notification-btn" :title="isSubscribed ? 'Notifications are on' : 'Enable notifications'">
+          <svg v-if="!isSubscribed" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="m2 2 20 20"/></svg>
+        </button>
 
         <div class="main-content">
           <img alt="Vue logo" src="https://cdn-icons-gif.flaticon.com/15600/15600693.gif" style="width: 150px; height: auto;">
@@ -73,10 +79,6 @@
             </button>
             <button @click="openAlbum">
               <h3>Our Photo Album</h3>
-            </button>
-            <!-- New Button for Notifications -->
-            <button @click="subscribeToNotifications" :disabled="isSubscribed">
-              <h3>{{ isSubscribed ? 'Notifications On' : 'Enable Notifications' }}</h3>
             </button>
           </div>
 
@@ -128,7 +130,7 @@
 export default {
   data() {
     return {
-      greetingMessage: 'Loading...',
+      greetingMessage: '',
       loveMessage: 'Loading...',
       translatedMessage: '',
       language: '',
@@ -160,7 +162,7 @@ export default {
     if (localStorage.getItem('hasVisited') === 'true') {
       this.showMainContent = true;
     }
-    this.fetchGreeting(); // Fetch the dynamic greeting
+    this.fetchGreeting();
     this.fetchLoveMessage();
     this.fetchQuote(); 
     this.fetchWeather();
@@ -515,6 +517,35 @@ export default {
   text-transform: capitalize;
   font-size: 0.8rem !important;
   color: #666;
+}
+
+/* --- NOTIFICATION BUTTON STYLES --- */
+.notification-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 10;
+  background: #fff;
+  color: #555;
+  padding: 0;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: all 0.2s;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.notification-btn:disabled {
+  background-color: #e9e9eb;
+  color: #5a9c47;
+  cursor: default;
+}
+.notification-btn:hover:not(:disabled) {
+    background-color: #f0f0f0;
 }
 
 
