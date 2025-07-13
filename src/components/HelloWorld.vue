@@ -74,6 +74,10 @@
             <button @click="openAlbum">
               <h3>Our Photo Album</h3>
             </button>
+            <!-- New Button for Notifications -->
+            <button @click="subscribeToNotifications" :disabled="isSubscribed">
+              <h3>{{ isSubscribed ? 'Notifications On' : 'Enable Notifications' }}</h3>
+            </button>
           </div>
 
           <div v-show="isDropdownOpen" class="dropdown-content" ref="letterContent">
@@ -93,7 +97,7 @@
             <p class="quote-author">- {{ quote.author }}</p>
           </div>
           <div v-if="isLoadingQuote" class="loading-quote">
-            <p>Generating a special message for you...</p>
+            <p>Creating a special message for you bae...</p>
           </div>
 
         </div>
@@ -124,7 +128,7 @@
 export default {
   data() {
     return {
-      greetingMessage: '', // New property for the dynamic greeting
+      greetingMessage: '',
       loveMessage: 'Loading...',
       translatedMessage: '',
       language: '',
@@ -132,12 +136,9 @@ export default {
       isDropdownOpen: false,
       showMainContent: false,
       touchStartY: 0,
-      // Property to hold the animation frame ID for cleanup
       animationFrameId: null, 
-      // Properties to control the number of fireworks
       fireworksLaunched: 0,
       maxFireworks: 5,
-      // Properties for the intro chat animation
       showMyTypingIndicator: false,
       showFirstHey: false,
       showLaurenTypingIndicator: false,
@@ -145,68 +146,51 @@ export default {
       showMySecondTypingIndicator: false,
       showThirdMessage: false,
       showLandingContent: false,
-      // Properties for the photo album
       photos: [],
       showAlbum: false,
       isLoadingPhotos: false,
-      // Properties for the quote
       quote: { text: '', author: '' },
       isLoadingQuote: false,
-      // Properties for the weather
       weather: { temp: null, description: '', iconUrl: '' },
       isLoadingWeather: false,
+      isSubscribed: false, // For push notifications
     };
   },
   created() {
-    // Caching logic is now re-enabled
     if (localStorage.getItem('hasVisited') === 'true') {
       this.showMainContent = true;
     }
-    this.setGreetingMessage(); // Set the greeting message
+    this.setGreetingMessage();
     this.fetchLoveMessage();
     this.fetchQuote(); 
-    this.fetchWeather(); // Fetch weather when the component is created
+    this.fetchWeather();
   },
   mounted() {
-    // Start the intro animation sequence if the main content isn't already showing
     if (!this.showMainContent) {
       this.startIntroAnimation();
     }
+    this.checkSubscriptionStatus();
   },
-  // We use a watcher to detect when the main content becomes visible
   watch: {
     showMainContent(isShowing) {
       if (isShowing) {
-        // Use $nextTick to ensure the canvas element is in the DOM before initializing
-        this.$nextTick(() => {
-          this.initFireworks();
-        });
+        this.$nextTick(() => this.initFireworks());
       } else {
-        // Clean up the animation when the component is hidden to save resources
-        if (this.animationFrameId) {
-          cancelAnimationFrame(this.animationFrameId);
-        }
+        if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
       }
     }
   },
   beforeUnmount() {
-    // Ensure animation is stopped and event listeners are removed when the component is destroyed
-    if (this.animationFrameId) {
-        cancelAnimationFrame(this.animationFrameId);
-    }
+    if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
     window.removeEventListener('resize', this.resizeCanvas);
   },
   methods: {
-    // --- HAPTIC FEEDBACK ---
     triggerHapticFeedback() {
-      if ('vibrate' in navigator) {
-        navigator.vibrate(50);
-      }
+      if ('vibrate' in navigator) navigator.vibrate(50);
     },
     setGreetingMessage() {
       const today = new Date();
-      // Using UTC methods to avoid timezone issues
-      const month = today.getUTCMonth() + 1; // getUTCMonth() is 0-indexed
+      const month = today.getUTCMonth() + 1;
       const day = today.getUTCDate();
       const year = today.getUTCFullYear();
 
@@ -287,9 +271,7 @@ export default {
       this.isLoadingWeather = true;
       try {
         const response = await fetch('https://0iumgzsw35.execute-api.us-east-2.amazonaws.com/lovestage/weather');
-        if (!response.ok) {
-          throw new Error('Network response was not ok for weather');
-        }
+        if (!response.ok) throw new Error('Network response was not ok for weather');
         const data = await response.json();
         this.weather.temp = Math.round(data.temp);
         this.weather.description = data.description;
@@ -315,16 +297,10 @@ export default {
       
       try {
         const response = await fetch(apiUrl);
-        if (!response.ok) {
-          throw new Error('Network response was not ok for AI quote');
-        }
+        if (!response.ok) throw new Error('Network response was not ok for AI quote');
         const data = await response.json();
         
-        const newQuote = {
-          text: data.quote,
-          author: data.author
-        };
-        
+        const newQuote = { text: data.quote, author: data.author };
         this.quote = newQuote;
         localStorage.setItem('dailyAiQuote', JSON.stringify({ date: today, quote: newQuote }));
 
@@ -340,9 +316,7 @@ export default {
       this.isLoadingPhotos = true;
       try {
         const response = await fetch('https://mylovetolauren.s3.us-east-2.amazonaws.com/photos.json');
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
+        if (!response.ok) throw new Error('Network response was not ok');
         this.photos = await response.json();
       } catch (error) {
         console.error('Error fetching photos:', error);
@@ -352,9 +326,7 @@ export default {
     },
     async openAlbum() {
       this.triggerHapticFeedback();
-      if (this.photos.length === 0) {
-        await this.fetchPhotos();
-      }
+      if (this.photos.length === 0) await this.fetchPhotos();
       this.showAlbum = true;
     },
     closeAlbum() {
@@ -368,7 +340,6 @@ export default {
       setTimeout(() => {
         this.loveMessage = `"I love you" in ${this.language}`;
         this.isFading = false;
-
         setTimeout(() => {
           this.isFading = true;
           setTimeout(() => {
@@ -381,18 +352,11 @@ export default {
     toggleScroll() {
       this.triggerHapticFeedback();
       this.isDropdownOpen = !this.isDropdownOpen; 
-
       this.$nextTick(() => {
         if (this.isDropdownOpen) {
-          this.$refs.letterContent.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-          });
+          this.$refs.letterContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else {
-          this.$refs.letterButton.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'
-          });
+          this.$refs.letterButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
       });
     },
@@ -406,9 +370,52 @@ export default {
         this.showMainPage();
       }
     },
+    
+    // --- PUSH NOTIFICATION METHODS ---
+    async checkSubscriptionStatus() {
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        this.isSubscribed = !!subscription;
+      }
+    },
+    async subscribeToNotifications() {
+      this.triggerHapticFeedback();
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        alert("Push notifications are not supported on this device.");
+        return;
+      }
+      
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        alert("You've disabled push notifications.");
+        return;
+      }
+      
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: 'YOUR_VAPID_PUBLIC_KEY' // We will generate this next
+      });
+      
+      // IMPORTANT: Replace with the URL for your new "save subscription" Lambda function
+      const saveSubscriptionUrl = 'YOUR_SAVE_SUBSCRIPTION_LAMBDA_URL';
+      
+      try {
+        await fetch(saveSubscriptionUrl, {
+          method: 'POST',
+          body: JSON.stringify(subscription),
+          headers: { 'Content-Type': 'application/json' }
+        });
+        this.isSubscribed = true;
+        alert("You're all set for notifications!");
+      } catch (error) {
+        console.error('Error saving subscription:', error);
+        alert('Something went wrong, please try again.');
+      }
+    },
 
     // --- FIREWORKS ANIMATION LOGIC ---
-    
     resizeCanvas() {
         const canvas = document.getElementById('fireworks-canvas');
         if(canvas) {
@@ -416,7 +423,6 @@ export default {
             canvas.height = window.innerHeight;
         }
     },
-
     initFireworks() {
       this.fireworksLaunched = 0;
       const canvas = document.getElementById('fireworks-canvas');
