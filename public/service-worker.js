@@ -12,10 +12,15 @@ const urlsToCache = [
 
 // 1. Install Event: Fired when the service worker is first installed.
 self.addEventListener('install', (event) => {
+  // self.skipWaiting() forces the waiting service worker to become the
+  // active service worker. This ensures the new worker is used immediately.
+  self.skipWaiting();
+  
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Opened cache');
+        // Add all the specified files to the cache.
         return cache.addAll(urlsToCache);
       })
   );
@@ -43,6 +48,10 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
+    }).then(() => {
+      // self.clients.claim() makes the new service worker take control of all
+      // open pages immediately.
+      return self.clients.claim();
     })
   );
 });
@@ -62,4 +71,15 @@ self.addEventListener('push', (event) => {
 
   // Show the notification.
   event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// 5. Notification Click Event: Fired when the user clicks on the notification.
+self.addEventListener('notificationclick', (event) => {
+  // Close the notification.
+  event.notification.close();
+
+  // Open the website when the notification is clicked.
+  event.waitUntil(
+    clients.openWindow('/')
+  );
 });
