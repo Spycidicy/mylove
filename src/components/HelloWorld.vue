@@ -130,7 +130,7 @@
 export default {
   data() {
     return {
-      greetingMessage: '',
+      greetingMessage: 'Loading...',
       loveMessage: 'Loading...',
       translatedMessage: '',
       language: '',
@@ -162,7 +162,7 @@ export default {
     if (localStorage.getItem('hasVisited') === 'true') {
       this.showMainContent = true;
     }
-    this.fetchGreeting();
+    this.fetchGreeting(); // Fetch the dynamic greeting from the new Lambda
     this.fetchLoveMessage();
     this.fetchQuote(); 
     this.fetchWeather();
@@ -198,7 +198,7 @@ export default {
         this.greetingMessage = data.greeting;
       } catch (error) {
         console.error("Error fetching greeting:", error);
-        this.greetingMessage = "Hello, my love!"; // Fallback message
+        this.greetingMessage = "Hello, my love!"; // A friendly fallback message
       }
     },
     startIntroAnimation() {
