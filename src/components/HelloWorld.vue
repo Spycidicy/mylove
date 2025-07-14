@@ -48,7 +48,7 @@
         <!-- Canvas for the fireworks animation is now a sibling to the main content -->
         <canvas id="fireworks-canvas"></canvas>
         
-        <!-- Weather Display - Moved outside of main-content to be positioned correctly -->
+        <!-- Weather Display -->
         <div v-if="weather.temp" class="weather-container">
           <img :src="weather.iconUrl" alt="Weather icon">
           <div class="weather-details">
@@ -56,6 +56,12 @@
             <p class="weather-description">{{ weather.description }}</p>
           </div>
         </div>
+        
+        <!-- Notification Button in the top-left corner -->
+        <button @click="subscribeToNotifications" :disabled="isSubscribed" class="notification-btn" :title="isSubscribed ? 'Notifications are on' : 'Enable notifications'">
+          <svg v-if="!isSubscribed" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="m2 2 20 20"/></svg>
+        </button>
 
         <div class="main-content">
           <img alt="Vue logo" src="https://cdn-icons-gif.flaticon.com/15600/15600693.gif" style="width: 150px; height: auto;">
@@ -73,10 +79,6 @@
             </button>
             <button @click="openAlbum">
               <h3>Our Photo Album</h3>
-            </button>
-            <!-- New Button for Notifications -->
-            <button @click="subscribeToNotifications" :disabled="isSubscribed">
-              <h3>{{ isSubscribed ? 'Notifications On' : 'Enable Notifications' }}</h3>
             </button>
           </div>
 
@@ -153,14 +155,14 @@ export default {
       isLoadingQuote: false,
       weather: { temp: null, description: '', iconUrl: '' },
       isLoadingWeather: false,
-      isSubscribed: false, // For push notifications
+      isSubscribed: false,
     };
   },
   created() {
     if (localStorage.getItem('hasVisited') === 'true') {
       this.showMainContent = true;
     }
-    this.setGreetingMessage();
+    this.fetchGreeting();
     this.fetchLoveMessage();
     this.fetchQuote(); 
     this.fetchWeather();
@@ -188,37 +190,15 @@ export default {
     triggerHapticFeedback() {
       if ('vibrate' in navigator) navigator.vibrate(50);
     },
-    setGreetingMessage() {
-      const today = new Date();
-      const month = today.getUTCMonth() + 1;
-      const day = today.getUTCDate();
-      const year = today.getUTCFullYear();
-
-      const getThanksgiving = (year) => {
-        const novemberFirst = new Date(Date.UTC(year, 10, 1));
-        const dayOfWeek = novemberFirst.getUTCDay();
-        const firstThursday = 1 + (4 - dayOfWeek + 7) % 7;
-        return firstThursday + 21;
-      };
-
-      if (month === 7 && day === 14) {
-        this.greetingMessage = "Happy Anniversary, my love!";
-      } else if (month === 7 && day === 6) {
-        this.greetingMessage = "Happy Birthday, my love!";
-      } else if (month === 1 && day === 1) {
-        this.greetingMessage = "Happy New Year, Lauren!";
-      } else if (month === 7 && day === 4) {
-        this.greetingMessage = "Happy Fourth of July!";
-      } else if (month === 11 && day === getThanksgiving(year)) {
-        this.greetingMessage = "Happy Thanksgiving, my love!";
-      } else if (month === 12 && day === 25) {
-        this.greetingMessage = "Merry Christmas, Lauren!";
-      } else {
-        const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
-        const nicknames = ["bae", "babe", "baby", "love", "Lauren", "cutie", "wife bae", "cutie bae"];
-        const dailyIndex = day % nicknames.length;
-        const dailyNickname = nicknames[dailyIndex];
-        this.greetingMessage = `Have a great ${dayOfWeek}, ${dailyNickname}!`;
+    async fetchGreeting() {
+      try {
+        const response = await fetch('https://0iumgzsw35.execute-api.us-east-2.amazonaws.com/lovestage/get-daily-greeting');
+        if (!response.ok) throw new Error('Failed to fetch greeting');
+        const data = await response.json();
+        this.greetingMessage = data.greeting;
+      } catch (error) {
+        console.error("Error fetching greeting:", error);
+        this.greetingMessage = "Hello, my love!"; // Fallback message
       }
     },
     startIntroAnimation() {
@@ -251,16 +231,8 @@ export default {
       try {
         const response = await fetch('https://0iumgzsw35.execute-api.us-east-2.amazonaws.com/lovestage/love-message');
         const data = await response.json();
-        
-        if (data.body) {
-          const parsedBody = JSON.parse(data.body);
-          this.translatedMessage = parsedBody.message;
-          this.language = parsedBody.language;
-        } else {
-          this.translatedMessage = data.message;
-          this.language = data.language;
-        }
-
+        this.translatedMessage = data.body ? JSON.parse(data.body).message : data.message;
+        this.language = data.body ? JSON.parse(data.body).language : data.language;
         this.loveMessage = this.translatedMessage;
       } catch (error) {
         console.error('Error fetching love message:', error);
@@ -299,11 +271,9 @@ export default {
         const response = await fetch(apiUrl);
         if (!response.ok) throw new Error('Network response was not ok for AI quote');
         const data = await response.json();
-        
         const newQuote = { text: data.quote, author: data.author };
         this.quote = newQuote;
         localStorage.setItem('dailyAiQuote', JSON.stringify({ date: today, quote: newQuote }));
-
       } catch (error) {
         console.error('Error fetching AI quote:', error);
         this.quote.text = 'My love for you is a message that never ends.';
@@ -336,7 +306,6 @@ export default {
     toggleText() {
       this.triggerHapticFeedback();
       this.isFading = true;
-
       setTimeout(() => {
         this.loveMessage = `"I love you" in ${this.language}`;
         this.isFading = false;
@@ -370,8 +339,6 @@ export default {
         this.showMainPage();
       }
     },
-    
-    // --- PUSH NOTIFICATION METHODS ---
     async checkSubscriptionStatus() {
       if ('serviceWorker' in navigator) {
         const registration = await navigator.serviceWorker.ready;
@@ -395,10 +362,9 @@ export default {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: 'YOUR_VAPID_PUBLIC_KEY' // We will generate this next
+        applicationServerKey: 'BLewptXn8CZX-6Queb6PHavTAWn3cygDQaQ9kfA3-K9MHW37EnftMIgraTKev5NTp_StvBnjgr1ikxFL2fZTQ6Y'
       });
       
-      // The placeholder has been replaced with your actual API Gateway URL
       const saveSubscriptionUrl = 'https://62n8jh9wn6.execute-api.us-east-2.amazonaws.com/default/save-love-app-subscription';
       
       try {
@@ -414,8 +380,6 @@ export default {
         alert('Something went wrong, please try again.');
       }
     },
-
-    // --- FIREWORKS ANIMATION LOGIC ---
     resizeCanvas() {
         const canvas = document.getElementById('fireworks-canvas');
         if(canvas) {
@@ -553,6 +517,35 @@ export default {
   text-transform: capitalize;
   font-size: 0.8rem !important;
   color: #666;
+}
+
+/* --- NOTIFICATION BUTTON STYLES --- */
+.notification-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 10;
+  background: #fff;
+  color: #555;
+  padding: 0;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: all 0.2s;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.notification-btn:disabled {
+  background-color: #e9e9eb;
+  color: #5a9c47;
+  cursor: default;
+}
+.notification-btn:hover:not(:disabled) {
+    background-color: #f0f0f0;
 }
 
 
