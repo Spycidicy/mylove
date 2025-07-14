@@ -395,8 +395,7 @@ export default {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        // The placeholder has been replaced with your actual VAPID Public Key
-        applicationServerKey: 'BLewptXn8CZX-6Queb6PHavTAWn3cygDQaQ9kfA3-K9MHW37EnftMIgraTKev5NTp_StvBnjgr1ikxFL2fZTQ6Y'
+        applicationServerKey: 'YOUR_VAPID_PUBLIC_KEY' // We will generate this next
       });
       
       // The placeholder has been replaced with your actual API Gateway URL
